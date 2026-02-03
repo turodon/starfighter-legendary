@@ -285,16 +285,16 @@
     #mobileControls.active { display: block; }
 
     .touch-joystick {
-      position: absolute; bottom: 30px; left: 30px;
-      width: 140px; height: 140px; pointer-events: auto; touch-action: none;
+      position: absolute; bottom: 20px; left: 20px;
+      width: 130px; height: 130px; pointer-events: auto; touch-action: none;
     }
     .joystick-base {
-      width: 140px; height: 140px; background: rgba(0,255,136,0.1);
+      width: 130px; height: 130px; background: rgba(0,255,136,0.1);
       border: 2px solid rgba(0,255,136,0.3); border-radius: 50%;
       position: relative;
     }
     .joystick-thumb {
-      width: 50px; height: 50px; background: rgba(0,255,136,0.4);
+      width: 45px; height: 45px; background: rgba(0,255,136,0.4);
       border: 2px solid rgba(0,255,136,0.7); border-radius: 50%;
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
       transition: none;
@@ -309,40 +309,46 @@
     .touch-btn:active { transform: scale(0.9); }
 
     #fireBtn {
-      bottom: 40px; right: 40px; width: 90px; height: 90px;
+      bottom: 20px; right: 30px; width: 80px; height: 80px;
       background: rgba(255,0,85,0.3); border: 3px solid rgba(255,0,85,0.7);
       color: #ff0055; font-size: 12px;
     }
     #fireBtn.active { background: rgba(255,0,85,0.6); box-shadow: 0 0 20px rgba(255,0,85,0.5); }
 
     #boostBtn {
-      bottom: 150px; right: 50px; width: 60px; height: 60px;
+      bottom: 115px; right: 35px; width: 55px; height: 55px;
       background: rgba(255,170,0,0.2); border: 2px solid rgba(255,170,0,0.5);
       color: #ffaa00; font-size: 10px;
     }
     #boostBtn.active { background: rgba(255,170,0,0.5); box-shadow: 0 0 15px rgba(255,170,0,0.5); }
 
     #thrustBtn {
-      bottom: 150px; left: 40px; width: 60px; height: 60px;
+      bottom: 170px; left: 35px; width: 55px; height: 55px;
       background: rgba(0,255,136,0.2); border: 2px solid rgba(0,255,136,0.5);
       color: #00ff88; font-size: 10px;
     }
     #thrustBtn.active { background: rgba(0,255,136,0.5); }
 
     #lockBtn {
-      bottom: 230px; right: 55px; width: 50px; height: 50px;
+      bottom: 185px; right: 38px; width: 48px; height: 48px;
       background: rgba(0,170,255,0.2); border: 2px solid rgba(0,170,255,0.5);
       color: #00aaff; font-size: 9px;
     }
 
+    #pauseBtn {
+      top: 10px; right: 10px; width: 40px; height: 40px;
+      background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3);
+      color: #fff; font-size: 14px; border-radius: 8px;
+    }
+
     .touch-weapon-bar {
-      position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
-      display: flex; gap: 5px; pointer-events: auto;
+      position: absolute; top: 65px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 4px; pointer-events: auto;
     }
     .touch-weapon-btn {
-      width: 38px; height: 38px; background: rgba(0,0,0,0.5); border: 2px solid #333;
+      width: 32px; height: 32px; background: rgba(0,0,0,0.5); border: 2px solid #333;
       border-radius: 8px; display: flex; align-items: center; justify-content: center;
-      font-size: 10px; color: #555; font-family: 'Courier New', monospace;
+      font-size: 9px; color: #555; font-family: 'Courier New', monospace;
       pointer-events: auto; touch-action: none; -webkit-tap-highlight-color: transparent;
     }
     .touch-weapon-btn.active { border-color: #00ff88; color: #00ff88; box-shadow: 0 0 8px rgba(0,255,136,0.5); }
@@ -350,6 +356,7 @@
 
     /* Mobile HUD adjustments */
     @media (max-width: 768px), (hover: none) and (pointer: coarse) {
+      html, body { touch-action: none; overscroll-behavior: none; -webkit-overflow-scrolling: auto; }
       .stats-panel { top: 8px; left: 8px; }
       .stat-row { font-size: 10px; }
       .bar-container { width: 100px; height: 8px; }
@@ -360,11 +367,9 @@
       .mission-name { font-size: 11px; }
       .mission-objective { font-size: 10px; }
       .mission-bar { width: 140px; }
-      .weapon-panel { bottom: 55px; }
-      .weapon-name { font-size: 12px; }
+      .weapon-panel { display: none; }
       .weapon-slots { display: none; }
-      .radar-panel { bottom: 70px; right: 10px; }
-      #radarCanvas { width: 100px; height: 100px; }
+      .radar-panel { display: none; }
       .speed-panel { display: none; }
       .wingman-panel { display: none; }
       .target-panel { top: 70px; right: 8px; }
@@ -373,7 +378,7 @@
       #bossUI { width: 250px; top: 55px; }
       .boss-name { font-size: 12px; }
       #announcement { font-size: 24px; }
-      #voiceText { font-size: 14px; }
+      #voiceText { font-size: 14px; bottom: 40%; }
       .screen h1 { font-size: 2rem; }
       .screen h2 { font-size: 1.3rem; }
       .menu-card { width: 130px; padding: 12px; }
@@ -502,6 +507,7 @@
     <div class="touch-btn" id="boostBtn">BOOST</div>
     <div class="touch-btn" id="thrustBtn">BRAKE</div>
     <div class="touch-btn" id="lockBtn">LOCK</div>
+    <div class="touch-btn" id="pauseBtn">| |</div>
     <div class="touch-weapon-bar" id="touchWeaponBar"></div>
   </div>
 
@@ -682,6 +688,21 @@
     window.onload = function() {
       // Mobile detection (must be before environment setup)
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && window.innerWidth < 1024);
+
+      // Global error handler - show errors visually for debugging
+      window.onerror = function(msg, url, line, col, error) {
+        let errDiv = document.getElementById('errorDisplay');
+        if(!errDiv) {
+          errDiv = document.createElement('div');
+          errDiv.id = 'errorDisplay';
+          errDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:rgba(255,0,0,0.9);color:white;padding:10px;z-index:99999;font-size:12px;font-family:monospace;max-height:40%;overflow:auto;';
+          document.body.appendChild(errDiv);
+        }
+        errDiv.innerHTML += '<div>ERROR: ' + msg + ' (line ' + line + ')</div>';
+        return false;
+      };
+
+      try {
 
       // ═══════════════════════════════════════════════════════════════
       // THREE.JS SETUP
@@ -997,7 +1018,12 @@
       // ═══════════════════════════════════════════════════════════════
       // AUDIO & VOICE
       // ═══════════════════════════════════════════════════════════════
-      function initAudio() { if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+      function initAudio() {
+        try {
+          if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+          if(audioCtx.state === 'suspended') audioCtx.resume();
+        } catch(e) {}
+      }
 
       function playSound(freq, type, dur, vol=0.15) {
         if(muted||!audioCtx) return;
@@ -1457,7 +1483,7 @@
           player.rotation.y -= joystickDX * mobileSens * delta;
           player.rotation.x -= joystickDY * mobileSens * delta;
           // Auto-forward on mobile - always move unless braking
-          if(!keys['s'] && !keys['S']) keys['w'] = true;
+          if(!keys['s'] && !keys['S'] && !keys[' ']) keys['w'] = true;
         } else {
           const sens = settings.sensitivity * 0.0004;
           player.rotation.y -= mouseDeltaX * sens;
@@ -2462,8 +2488,8 @@
         const joystickBase = document.getElementById('joystickBase');
         const joystickThumb = document.getElementById('joystickThumb');
         let joystickActive = false, joystickId = null;
-        const joystickCenter = { x: 70, y: 70 };
-        const joystickMax = 55;
+        const joystickCenter = { x: 65, y: 65 };
+        const joystickMax = 50;
 
         document.getElementById('joystickArea').addEventListener('touchstart', e => {
           e.preventDefault();
@@ -2530,6 +2556,10 @@
         lockBtn.addEventListener('touchend', e => { e.preventDefault(); keys['Tab'] = false; }, {passive:false});
         lockBtn.addEventListener('touchcancel', e => { keys['Tab'] = false; });
 
+        // Pause button
+        const pauseBtn = document.getElementById('pauseBtn');
+        pauseBtn.addEventListener('touchstart', e => { e.preventDefault(); togglePause(); }, {passive:false});
+
         // Prevent default touch behavior on game area
         renderer.domElement.addEventListener('touchstart', e => e.preventDefault(), {passive:false});
         renderer.domElement.addEventListener('touchmove', e => e.preventDefault(), {passive:false});
@@ -2551,7 +2581,18 @@
       load();
       renderWeaponSlots();
       requestAnimationFrame(gameLoop);
-      console.log('Starfighter Ultimate initialized!');
+      console.log('Starfighter Legendary initialized! Mobile:', isMobile);
+
+      } catch(initError) {
+        let errDiv = document.getElementById('errorDisplay');
+        if(!errDiv) {
+          errDiv = document.createElement('div');
+          errDiv.id = 'errorDisplay';
+          errDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:rgba(255,0,0,0.9);color:white;padding:15px;z-index:99999;font-size:14px;font-family:monospace;';
+          document.body.appendChild(errDiv);
+        }
+        errDiv.innerHTML = 'INIT ERROR: ' + initError.message + '<br>Stack: ' + (initError.stack || 'none');
+      }
     };
   </script>
 </body>
