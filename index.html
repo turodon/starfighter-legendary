@@ -795,10 +795,11 @@
       const sSeg = isMobile ? 12 : 32;
       const sunCore = new THREE.Mesh(new THREE.SphereGeometry(60,sSeg,sSeg), new THREE.MeshBasicMaterial({color:0xffffcc}));
       sunGroup.add(sunCore);
+      let sunGlow, sunFlare;
       if(!isMobile) {
-        const sunGlow = new THREE.Mesh(new THREE.SphereGeometry(100,sSeg,sSeg), new THREE.MeshBasicMaterial({color:0xffaa44,transparent:true,opacity:0.15}));
+        sunGlow = new THREE.Mesh(new THREE.SphereGeometry(100,sSeg,sSeg), new THREE.MeshBasicMaterial({color:0xffaa44,transparent:true,opacity:0.15}));
         sunGroup.add(sunGlow);
-        const sunFlare = new THREE.Mesh(new THREE.SphereGeometry(150,sSeg,sSeg), new THREE.MeshBasicMaterial({color:0xff8800,transparent:true,opacity:0.05}));
+        sunFlare = new THREE.Mesh(new THREE.SphereGeometry(150,sSeg,sSeg), new THREE.MeshBasicMaterial({color:0xff8800,transparent:true,opacity:0.05}));
         sunGroup.add(sunFlare);
       }
       sunGroup.position.set(800,400,1500);
@@ -1943,8 +1944,10 @@
         // Legendary systems
         ambientChatter();
         planet.rotation.y += 0.0003;
-        sunGlow.scale.setScalar(1 + Math.sin(Date.now()*0.002)*0.05);
-        sunFlare.scale.setScalar(1 + Math.sin(Date.now()*0.001)*0.1);
+        if(!isMobile) {
+          sunGlow.scale.setScalar(1 + Math.sin(Date.now()*0.002)*0.05);
+          sunFlare.scale.setScalar(1 + Math.sin(Date.now()*0.001)*0.1);
+        }
 
         // Update hyperspace lines
         hyperspaceLines.forEach(l => {
