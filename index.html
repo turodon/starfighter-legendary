@@ -344,12 +344,16 @@
       letter-spacing: 4px;
     }
 
-    /* Look touch indicator */
-    #lookIndicator {
-      position: fixed; width: 60px; height: 60px; border-radius: 50%;
-      border: 2px solid rgba(0,170,255,0.4); pointer-events: none; z-index: 160;
-      display: none; transform: translate(-50%, -50%);
-      background: radial-gradient(circle, rgba(0,170,255,0.1) 0%, transparent 70%);
+    /* Look behind button */
+    #lookBtn {
+      bottom: 240px; left: 35px; width: 50px; height: 50px;
+      background: radial-gradient(circle, rgba(0,170,255,0.2) 0%, rgba(0,170,255,0.06) 70%);
+      border: 2px solid rgba(0,170,255,0.5); color: #00aaff; font-size: 8px;
+      box-shadow: 0 0 10px rgba(0,170,255,0.15);
+    }
+    #lookBtn.active {
+      background: radial-gradient(circle, rgba(0,170,255,0.5) 0%, rgba(0,170,255,0.2) 70%);
+      box-shadow: 0 0 20px rgba(0,170,255,0.5);
     }
 
     /* Gyro toggle */
@@ -538,7 +542,6 @@
   <div id="comboFlash"></div>
   <div id="autoFireIndicator">AUTO</div>
   <div id="streakAnnounce"></div>
-  <div id="lookIndicator"></div>
 
   <!-- Overlays -->
   <div id="damageOverlay" class="overlay"></div>
@@ -657,6 +660,7 @@
     <div class="touch-btn" id="fireBtn">FIRE</div>
     <div class="touch-btn" id="boostBtn">BOOST</div>
     <div class="touch-btn" id="thrustBtn">BRAKE</div>
+    <div class="touch-btn" id="lookBtn">LOOK</div>
     <div class="touch-btn" id="lockBtn">LOCK</div>
     <div class="touch-btn" id="gyroBtn">GYRO</div>
     <div class="touch-btn" id="pauseBtn">| |</div>
@@ -927,7 +931,7 @@
       // Aim assist (mobile only)
       function aimAssist(playerObj, fwdVec, enemyList, bossObj, aceObj, delta) {
         if(!isMobile) return;
-        let closest = null, closestAngle = 0.45; // ~25 degree cone
+        let closest = null, closestAngle = 0.3; // ~72 degree cone for generous aim assist
         const allTargets = [...enemyList];
         if(bossObj) allTargets.push(bossObj);
         if(aceObj) allTargets.push(aceObj);
@@ -1018,7 +1022,7 @@
           const toE = e.position.clone().sub(playerPos).normalize();
           const dot = fwdVec.dot(toE);
           const dist = e.position.distanceTo(playerPos);
-          if(dot > 0.92 && dist < 150) { // Very tight cone = ~23 degrees
+          if(dot > 0.85 && dist < 150) { // Wider cone ~32 degrees for easier mobile aiming
             autoFireTarget = e;
             return true;
           }
@@ -1496,9 +1500,7 @@
       // Mobile touch state
       let touchThrust = false, touchBoosting = false, touchLocking = false;
       let joystickDX = 0, joystickDY = 0;
-      let smoothJoyDX = 0, smoothJoyDY = 0;
-      let camYawOffset = 0, camPitchOffset = 0; // Camera orbit offsets for free-look
-      let lookDragId = null, lookLastX = 0, lookLastY = 0;
+      let lookingBehind = false; // Hold LOOK button for rear view
       // Kill streak tracking
       let rapidKills = 0, rapidKillTimer = 0;
       const RAPID_KILL_WINDOW = 3500; // ms between kills to chain
@@ -1634,15 +1636,19 @@
       function createEnemy(type, pos) {
         const group = new THREE.Group();
         let health, speed, points, size, shootInt;
-        if(type==='fighter') { health=25;speed=0.9;points=100;size=2;shootInt=2500;
-          group.add(new THREE.Mesh(new THREE.ConeGeometry(0.8,2.5,6), matPhong({color:0xff0055})));
-        } else if(type==='bomber') { health=70;speed=0.4;points=250;size=3.5;shootInt=1500;
-          group.add(new THREE.Mesh(new THREE.SphereGeometry(1.5,8,8), matPhong({color:0x8800ff})));
-        } else if(type==='interceptor') { health=12;speed=1.5;points=120;size=1.5;shootInt=3000;
-          group.add(new THREE.Mesh(new THREE.TetrahedronGeometry(1), matPhong({color:0xffff00})));
-        } else { health=20;speed=0.6;points=80;size=2;shootInt=3000;
-          group.add(new THREE.Mesh(new THREE.ConeGeometry(1,2,5), matPhong({color:0xff3366})));
+        const mobileScale = isMobile ? 1.4 : 1; // Bigger on mobile for visibility
+        if(type==='fighter') { health=25;speed=0.9;points=100;size=2*mobileScale;shootInt=2500;
+          group.add(new THREE.Mesh(new THREE.ConeGeometry(0.8*mobileScale,2.5*mobileScale,6), matPhong({color:0xff0055,emissive:0x440011})));
+        } else if(type==='bomber') { health=70;speed=0.4;points=250;size=3.5*mobileScale;shootInt=1500;
+          group.add(new THREE.Mesh(new THREE.SphereGeometry(1.5*mobileScale,8,8), matPhong({color:0x8800ff,emissive:0x220044})));
+        } else if(type==='interceptor') { health=12;speed=1.5;points=120;size=1.5*mobileScale;shootInt=3000;
+          group.add(new THREE.Mesh(new THREE.TetrahedronGeometry(1*mobileScale), matPhong({color:0xffff00,emissive:0x444400})));
+        } else { health=20;speed=0.6;points=80;size=2*mobileScale;shootInt=3000;
+          group.add(new THREE.Mesh(new THREE.ConeGeometry(1*mobileScale,2*mobileScale,5), matPhong({color:0xff3366,emissive:0x440011})));
         }
+        // Glow aura for visibility
+        const aura = new THREE.Mesh(new THREE.SphereGeometry(size*0.8, 8, 8), new THREE.MeshBasicMaterial({color:type==='fighter'?0xff0055:type==='bomber'?0x8800ff:type==='interceptor'?0xffff00:0xff3366, transparent:true, opacity:0.15}));
+        group.add(aura);
         group.position.copy(pos);
         scene.add(group);
         return { mesh:group, type, position:pos.clone(), velocity:new THREE.Vector3(), health:health*(1+level*0.1), maxHealth:health*(1+level*0.1), speed:speed*(1+level*0.02), points, size, shootTimer:Math.random()*shootInt, shootInterval:shootInt, behavior:Math.random() };
@@ -1781,7 +1787,7 @@
       function spawnEnemy() {
         const types = ['basic','fighter','interceptor','bomber'];
         const type = types[Math.floor(Math.random()*Math.min(types.length,2+Math.floor(level/2)))];
-        const spawnDist = isMobile ? 60+Math.random()*40 : 100+Math.random()*60;
+        const spawnDist = isMobile ? 35+Math.random()*30 : 100+Math.random()*60;
         const d=spawnDist, t=Math.random()*Math.PI*2, p=Math.random()*Math.PI*0.5+Math.PI*0.25;
         const pos = new THREE.Vector3(player.position.x+d*Math.sin(p)*Math.cos(t), player.position.y+d*Math.cos(p)*0.4, player.position.z+d*Math.sin(p)*Math.sin(t));
         enemies.push(createEnemy(type, pos));
@@ -2011,14 +2017,10 @@
 
         // Player rotation
         if(isMobile) {
-          // Light smoothing - just cuts micro-jitter, stays responsive
-          smoothJoyDX += (joystickDX - smoothJoyDX) * 0.4 * delta;
-          smoothJoyDY += (joystickDY - smoothJoyDY) * 0.4 * delta;
-          if(Math.abs(smoothJoyDX) < 0.005) smoothJoyDX = 0;
-          if(Math.abs(smoothJoyDY) < 0.005) smoothJoyDY = 0;
-          const mobileSens = settings.sensitivity * 0.0055;
-          player.rotation.y -= smoothJoyDX * mobileSens * delta;
-          player.rotation.x -= smoothJoyDY * mobileSens * delta;
+          // Direct responsive input - no smoothing lag
+          const mobileSens = settings.sensitivity * 0.005;
+          player.rotation.y -= joystickDX * mobileSens * delta;
+          player.rotation.x -= joystickDY * mobileSens * delta;
           // Gyroscope fine-tuning
           if(gyroEnabled) {
             player.rotation.y -= gyroGamma * 0.00006 * delta;
@@ -2040,8 +2042,8 @@
 
         if(keys['q']||keys['Q']) player.rollAngle += 0.04*delta;
         if(keys['e']||keys['E']) player.rollAngle -= 0.04*delta;
-        // Ship banking on mobile - tilt when turning (uses smoothed input)
-        if(isMobile && smoothJoyDX !== 0) player.rollAngle += smoothJoyDX * 0.02 * delta;
+        // Ship banking on mobile - tilt when turning
+        if(isMobile && joystickDX !== 0) player.rollAngle += joystickDX * 0.02 * delta;
         player.rollAngle *= 0.93;
 
         player.quaternion.setFromEuler(player.rotation);
@@ -2083,22 +2085,16 @@
           const camHeight = isMobile ? 3.5 : 2.5;
           const lookAhead = isMobile ? 20 : 15;
           const lerpSpeed = isMobile ? 0.07 : 0.08;
-          const lateralOffset = isMobile ? -smoothJoyDX * 1.5 : 0;
+          const lateralOffset = isMobile ? -joystickDX * 1.5 : 0;
 
-          // Camera orbit for free-look (right-side drag)
-          const isFreeLooking = isMobile && (Math.abs(camYawOffset) > 0.03 || Math.abs(camPitchOffset) > 0.03);
           let camTarget;
-
-          if(isFreeLooking) {
-            // Orbit camera around player - drag right side to look around ship
-            const behindDir = fwd.clone().multiplyScalar(-1);
-            const orbitQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), camYawOffset);
-            behindDir.applyQuaternion(orbitQuat);
+          if(lookingBehind) {
+            // Rear view - camera in front of ship, looking back
             camTarget = player.position.clone()
-              .add(behindDir.multiplyScalar(camDist))
-              .add(new THREE.Vector3(0, camHeight + camPitchOffset * 6, 0));
-            camera.position.lerp(camTarget, lerpSpeed * 1.3);
-            camera.lookAt(player.position.clone().add(new THREE.Vector3(0, 1, 0)));
+              .add(fwd.clone().multiplyScalar(camDist * 0.8))
+              .add(new THREE.Vector3(0, camHeight + 2, 0));
+            camera.position.lerp(camTarget, lerpSpeed * 1.5);
+            camera.lookAt(player.position.clone().add(fwd.clone().multiplyScalar(-lookAhead)));
           } else {
             // Normal chase camera
             camTarget = player.position.clone()
@@ -2107,14 +2103,6 @@
               .add(right.clone().multiplyScalar(lateralOffset));
             camera.position.lerp(camTarget, lerpSpeed);
             camera.lookAt(player.position.clone().add(fwd.clone().multiplyScalar(lookAhead)));
-          }
-
-          // Decay orbit offsets back to center
-          if(isMobile && lookDragId === null) {
-            camYawOffset *= 0.92;
-            camPitchOffset *= 0.92;
-            if(Math.abs(camYawOffset) < 0.02) camYawOffset = 0;
-            if(Math.abs(camPitchOffset) < 0.02) camPitchOffset = 0;
           }
           document.getElementById('cockpitHUD').style.display = 'none';
         }
@@ -2156,7 +2144,7 @@
           speedCanvas.style.opacity = '0';
         }
 
-        document.getElementById('boostOverlay').style.opacity = boosting ? 0.3 : (player.speed > 1.5 ? 0.1 : 0);
+        document.getElementById('boostOverlay').style.opacity = boosting ? 0.3 : (player.speed > player.maxSpeed * 0.9 ? 0.1 : 0);
 
         // Railgun charging
         if(weapons[currentWeapon].needsCharge && shooting) {
@@ -2352,7 +2340,7 @@
         // Spawn enemies - more aggressive waves
         if(gameMode !== 'bossRush' && !boss && !currentAce && !hyperspaceActive) {
           const maxEnemies = isMobile ? Math.min(8+level, 12) : 12+level*3;
-          const spawnRate = isMobile ? (0.008+level*0.002) : (0.005+level*0.0015);
+          const spawnRate = isMobile ? (0.015+level*0.003) : (0.005+level*0.0015);
           if(Math.random() < spawnRate*delta && enemies.length < maxEnemies) spawnEnemy();
 
           // Wave spawning - groups every 30 seconds
@@ -2432,7 +2420,7 @@
             enemies.splice(i,1);
             if(lockedTarget === e) lockedTarget = null;
           }
-          if(dist > 300) { scene.remove(e.mesh); enemies.splice(i,1); if(lockedTarget === e) lockedTarget = null; }
+          if(dist > 200) { scene.remove(e.mesh); enemies.splice(i,1); if(lockedTarget === e) lockedTarget = null; }
         }
 
         // Update boss
@@ -3240,60 +3228,17 @@
         const pauseBtn = document.getElementById('pauseBtn');
         pauseBtn.addEventListener('touchstart', e => { e.preventDefault(); togglePause(); }, {passive:false});
 
-        // Right-side touch drag for orbital camera free-look
-        const lookInd = document.getElementById('lookIndicator');
-        renderer.domElement.addEventListener('touchstart', e => {
-          e.preventDefault();
-          if(!gameRunning || gamePaused) return;
-          for(let i = 0; i < e.changedTouches.length; i++) {
-            const t = e.changedTouches[i];
-            if(t.clientX > window.innerWidth * 0.35 && lookDragId === null) {
-              lookDragId = t.identifier;
-              lookLastX = t.clientX;
-              lookLastY = t.clientY;
-              if(lookInd) { lookInd.style.display = 'block'; lookInd.style.left = t.clientX + 'px'; lookInd.style.top = t.clientY + 'px'; }
-            }
-          }
-        }, {passive:false});
+        // Prevent default on canvas - NO free-look drag (was causing accidental camera orbit)
+        renderer.domElement.addEventListener('touchstart', e => e.preventDefault(), {passive:false});
+        renderer.domElement.addEventListener('touchmove', e => e.preventDefault(), {passive:false});
 
-        renderer.domElement.addEventListener('touchmove', e => {
-          e.preventDefault();
-          if(lookDragId === null) return;
-          for(let i = 0; i < e.changedTouches.length; i++) {
-            if(e.changedTouches[i].identifier === lookDragId) {
-              const t = e.changedTouches[i];
-              const dx = t.clientX - lookLastX;
-              const dy = t.clientY - lookLastY;
-              camYawOffset += dx * 0.006;
-              camPitchOffset += dy * 0.004;
-              camYawOffset = Math.max(-Math.PI * 0.75, Math.min(Math.PI * 0.75, camYawOffset));
-              camPitchOffset = Math.max(-0.5, Math.min(0.8, camPitchOffset));
-              lookLastX = t.clientX;
-              lookLastY = t.clientY;
-              if(lookInd) { lookInd.style.left = t.clientX + 'px'; lookInd.style.top = t.clientY + 'px'; }
-            }
-          }
-        }, {passive:false});
-
-        renderer.domElement.addEventListener('touchend', e => {
-          for(let i = 0; i < e.changedTouches.length; i++) {
-            if(e.changedTouches[i].identifier === lookDragId) {
-              lookDragId = null;
-              if(lookInd) lookInd.style.display = 'none';
-              break;
-            }
-          }
-        });
-
-        renderer.domElement.addEventListener('touchcancel', e => {
-          for(let i = 0; i < e.changedTouches.length; i++) {
-            if(e.changedTouches[i].identifier === lookDragId) {
-              lookDragId = null;
-              if(lookInd) lookInd.style.display = 'none';
-              break;
-            }
-          }
-        });
+        // Look behind button
+        const lookBtn = document.getElementById('lookBtn');
+        if(lookBtn) {
+          lookBtn.addEventListener('touchstart', e => { e.preventDefault(); lookingBehind = true; lookBtn.classList.add('active'); haptic(8); }, {passive:false});
+          lookBtn.addEventListener('touchend', e => { e.preventDefault(); lookingBehind = false; lookBtn.classList.remove('active'); }, {passive:false});
+          lookBtn.addEventListener('touchcancel', e => { lookingBehind = false; lookBtn.classList.remove('active'); });
+        }
 
         // Gyro toggle button
         const gyroBtnEl = document.getElementById('gyroBtn');
