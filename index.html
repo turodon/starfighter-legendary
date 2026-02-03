@@ -912,8 +912,8 @@
         }
         if(closest) {
           const toTarget = closest.position.clone().sub(playerObj.position).normalize();
-          // Gentle magnetic pull toward target
-          const pullStrength = 0.0015 * delta;
+          // Gentle magnetic pull toward target (toned down)
+          const pullStrength = 0.0008 * delta;
           const cross = new THREE.Vector3().crossVectors(fwdVec, toTarget);
           playerObj.rotation.y += cross.y * pullStrength;
           playerObj.rotation.x -= cross.x * pullStrength;
@@ -1291,6 +1291,9 @@
       // Mobile touch state
       let touchThrust = false, touchBoosting = false, touchLocking = false;
       let joystickDX = 0, joystickDY = 0;
+      let smoothJoyDX = 0, smoothJoyDY = 0; // Smoothed joystick for less wild movement
+      let lookOffsetX = 0, lookOffsetY = 0; // Camera free-look offset from right-side drag
+      let lookDragId = null, lookLastX = 0, lookLastY = 0; // Right-side touch tracking
 
       // Settings
       let settings = {
@@ -1794,9 +1797,16 @@
 
         // Player rotation
         if(isMobile) {
-          const mobileSens = settings.sensitivity * 0.006;
-          player.rotation.y -= joystickDX * mobileSens * delta;
-          player.rotation.x -= joystickDY * mobileSens * delta;
+          // Smooth joystick input - lerp toward raw values for dampened feel
+          const joySmoothing = 0.15;
+          smoothJoyDX += (joystickDX - smoothJoyDX) * joySmoothing * delta;
+          smoothJoyDY += (joystickDY - smoothJoyDY) * joySmoothing * delta;
+          // Kill tiny residual drift
+          if(Math.abs(smoothJoyDX) < 0.01) smoothJoyDX = 0;
+          if(Math.abs(smoothJoyDY) < 0.01) smoothJoyDY = 0;
+          const mobileSens = settings.sensitivity * 0.004;
+          player.rotation.y -= smoothJoyDX * mobileSens * delta;
+          player.rotation.x -= smoothJoyDY * mobileSens * delta;
           // Auto-forward on mobile - always move unless braking
           if(!keys['s'] && !keys['S'] && !keys[' ']) keys['w'] = true;
         } else {
@@ -1813,8 +1823,8 @@
 
         if(keys['q']||keys['Q']) player.rollAngle += 0.04*delta;
         if(keys['e']||keys['E']) player.rollAngle -= 0.04*delta;
-        // Ship banking on mobile - tilt when turning
-        if(isMobile && joystickDX !== 0) player.rollAngle += joystickDX * 0.02 * delta;
+        // Ship banking on mobile - tilt when turning (uses smoothed input)
+        if(isMobile && smoothJoyDX !== 0) player.rollAngle += smoothJoyDX * 0.02 * delta;
         player.rollAngle *= 0.93;
 
         player.quaternion.setFromEuler(player.rotation);
@@ -1857,13 +1867,26 @@
           const lookAhead = isMobile ? 20 : 15;
           const lerpSpeed = isMobile ? 0.06 : 0.08;
           // Slight lateral offset when turning for dynamic feel
-          const lateralOffset = isMobile ? -joystickDX * 2 : 0;
+          const lateralOffset = isMobile ? -smoothJoyDX * 2 : 0;
           const camTarget = player.position.clone()
             .add(fwd.clone().multiplyScalar(-camDist))
             .add(new THREE.Vector3(0, camHeight, 0))
             .add(right.clone().multiplyScalar(lateralOffset));
           camera.position.lerp(camTarget, lerpSpeed);
-          camera.lookAt(player.position.clone().add(fwd.clone().multiplyScalar(lookAhead)));
+          // Look target with free-look offset from right-side drag
+          const lookTarget = player.position.clone().add(fwd.clone().multiplyScalar(lookAhead));
+          if(isMobile) {
+            lookTarget.add(right.clone().multiplyScalar(lookOffsetX * 15));
+            lookTarget.add(new THREE.Vector3(0, lookOffsetY * 10, 0));
+            // Decay look offset back to center when not dragging
+            if(lookDragId === null) {
+              lookOffsetX *= 0.94;
+              lookOffsetY *= 0.94;
+              if(Math.abs(lookOffsetX) < 0.005) lookOffsetX = 0;
+              if(Math.abs(lookOffsetY) < 0.005) lookOffsetY = 0;
+            }
+          }
+          camera.lookAt(lookTarget);
           document.getElementById('cockpitHUD').style.display = 'none';
         }
 
@@ -2955,9 +2978,56 @@
         const pauseBtn = document.getElementById('pauseBtn');
         pauseBtn.addEventListener('touchstart', e => { e.preventDefault(); togglePause(); }, {passive:false});
 
-        // Prevent default touch behavior on game area
-        renderer.domElement.addEventListener('touchstart', e => e.preventDefault(), {passive:false});
-        renderer.domElement.addEventListener('touchmove', e => e.preventDefault(), {passive:false});
+        // Right-side touch drag for camera free-look
+        renderer.domElement.addEventListener('touchstart', e => {
+          e.preventDefault();
+          if(!gameRunning || gamePaused) return;
+          for(let i = 0; i < e.changedTouches.length; i++) {
+            const t = e.changedTouches[i];
+            // Activate on right 60% of screen (avoids joystick zone)
+            if(t.clientX > window.innerWidth * 0.4 && lookDragId === null) {
+              lookDragId = t.identifier;
+              lookLastX = t.clientX;
+              lookLastY = t.clientY;
+            }
+          }
+        }, {passive:false});
+
+        renderer.domElement.addEventListener('touchmove', e => {
+          e.preventDefault();
+          if(lookDragId === null) return;
+          for(let i = 0; i < e.changedTouches.length; i++) {
+            if(e.changedTouches[i].identifier === lookDragId) {
+              const t = e.changedTouches[i];
+              const dx = t.clientX - lookLastX;
+              const dy = t.clientY - lookLastY;
+              lookOffsetX += dx * 0.004;
+              lookOffsetY -= dy * 0.004;
+              lookOffsetX = Math.max(-1.2, Math.min(1.2, lookOffsetX));
+              lookOffsetY = Math.max(-0.6, Math.min(0.6, lookOffsetY));
+              lookLastX = t.clientX;
+              lookLastY = t.clientY;
+            }
+          }
+        }, {passive:false});
+
+        renderer.domElement.addEventListener('touchend', e => {
+          for(let i = 0; i < e.changedTouches.length; i++) {
+            if(e.changedTouches[i].identifier === lookDragId) {
+              lookDragId = null;
+              break;
+            }
+          }
+        });
+
+        renderer.domElement.addEventListener('touchcancel', e => {
+          for(let i = 0; i < e.changedTouches.length; i++) {
+            if(e.changedTouches[i].identifier === lookDragId) {
+              lookDragId = null;
+              break;
+            }
+          }
+        });
       }
 
       // ═══════════════════════════════════════════════════════════════
