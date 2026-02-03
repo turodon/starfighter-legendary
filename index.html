@@ -280,6 +280,60 @@
     .tutorial-box p { color: #ccc; margin: 10px 0; font-size: 14px; }
     .tutorial-box .keys { color: #ffaa00; font-size: 16px; margin: 15px 0; }
 
+    /* Enemy Indicators (off-screen arrows) */
+    #enemyIndicators { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 180; }
+    .enemy-indicator {
+      position: absolute; width: 0; height: 0;
+      border-left: 8px solid transparent; border-right: 8px solid transparent;
+      border-bottom: 14px solid #ff0055; filter: drop-shadow(0 0 6px #ff0055);
+    }
+    .enemy-indicator.boss { border-bottom-color: #ff00ff; filter: drop-shadow(0 0 8px #ff00ff); }
+
+    /* Floating Damage Numbers */
+    .dmg-number {
+      position: fixed; pointer-events: none; z-index: 210;
+      font-family: 'Courier New', monospace; font-weight: bold;
+      text-shadow: 0 0 8px currentColor, 0 2px 4px rgba(0,0,0,0.8);
+      animation: dmgFloat 0.8s ease-out forwards;
+    }
+    @keyframes dmgFloat {
+      0% { opacity: 1; transform: translateY(0) scale(1.2); }
+      100% { opacity: 0; transform: translateY(-40px) scale(0.8); }
+    }
+
+    /* Hit Marker */
+    #hitMarker {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 30px; height: 30px; pointer-events: none; z-index: 201; opacity: 0;
+    }
+    #hitMarker.active { opacity: 1; }
+    #hitMarker::before, #hitMarker::after {
+      content: ''; position: absolute; background: #ff0055;
+    }
+    #hitMarker::before { width: 2px; height: 100%; left: 50%; transform: translateX(-50%) rotate(45deg); }
+    #hitMarker::after { width: 2px; height: 100%; left: 50%; transform: translateX(-50%) rotate(-45deg); }
+
+    /* Combo Flash */
+    #comboFlash {
+      position: fixed; top: 35%; left: 50%; transform: translateX(-50%);
+      font-size: 36px; font-weight: bold; color: #ffaa00;
+      text-shadow: 0 0 20px #ffaa00, 0 0 40px rgba(255,170,0,0.5);
+      pointer-events: none; z-index: 250; opacity: 0;
+      animation: none;
+    }
+    #comboFlash.active { animation: comboFlashAnim 0.6s ease-out forwards; }
+    @keyframes comboFlashAnim {
+      0% { opacity: 1; transform: translateX(-50%) scale(1.5); }
+      100% { opacity: 0; transform: translateX(-50%) scale(0.9) translateY(-20px); }
+    }
+
+    /* Auto-fire indicator */
+    #autoFireIndicator {
+      position: fixed; top: 55%; left: 50%; transform: translateX(-50%);
+      font-size: 10px; color: rgba(255,0,85,0.6); pointer-events: none; z-index: 195;
+      opacity: 0; transition: opacity 0.15s;
+    }
+
     /* Landscape Orientation Prompt */
     #landscapePrompt {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -453,6 +507,10 @@
   <!-- Kill Flash & Speed Lines -->
   <div id="killFlash"></div>
   <canvas id="speedLinesCanvas"></canvas>
+  <div id="enemyIndicators"></div>
+  <div id="hitMarker"></div>
+  <div id="comboFlash"></div>
+  <div id="autoFireIndicator">AUTO</div>
 
   <!-- Overlays -->
   <div id="damageOverlay" class="overlay"></div>
@@ -836,6 +894,125 @@
 
       // UI frame throttle
       let uiFrame = 0;
+
+      // Aim assist (mobile only)
+      function aimAssist(playerObj, fwdVec, enemyList, bossObj, aceObj, delta) {
+        if(!isMobile) return;
+        let closest = null, closestAngle = 0.45; // ~25 degree cone
+        const allTargets = [...enemyList];
+        if(bossObj) allTargets.push(bossObj);
+        if(aceObj) allTargets.push(aceObj);
+        for(const e of allTargets) {
+          const toE = e.position.clone().sub(playerObj.position).normalize();
+          const angle = fwdVec.dot(toE);
+          if(angle > closestAngle) {
+            closestAngle = angle;
+            closest = e;
+          }
+        }
+        if(closest) {
+          const toTarget = closest.position.clone().sub(playerObj.position).normalize();
+          // Gentle magnetic pull toward target
+          const pullStrength = 0.0015 * delta;
+          const cross = new THREE.Vector3().crossVectors(fwdVec, toTarget);
+          playerObj.rotation.y += cross.y * pullStrength;
+          playerObj.rotation.x -= cross.x * pullStrength;
+          return closest;
+        }
+        return null;
+      }
+
+      // Auto-fire (mobile only) - fires when enemy is near crosshair
+      let autoFireTarget = null;
+      function checkAutoFire(fwdVec, enemyList, bossObj, aceObj, playerPos) {
+        if(!isMobile) return false;
+        const allTargets = [...enemyList];
+        if(bossObj) allTargets.push(bossObj);
+        if(aceObj) allTargets.push(aceObj);
+        for(const e of allTargets) {
+          const toE = e.position.clone().sub(playerPos).normalize();
+          const dot = fwdVec.dot(toE);
+          const dist = e.position.distanceTo(playerPos);
+          if(dot > 0.92 && dist < 150) { // Very tight cone = ~23 degrees
+            autoFireTarget = e;
+            return true;
+          }
+        }
+        autoFireTarget = null;
+        return false;
+      }
+
+      // Off-screen enemy indicators
+      function updateEnemyIndicators(cam, enemyList, bossObj) {
+        const container = document.getElementById('enemyIndicators');
+        if(!container || !isMobile) return;
+        container.innerHTML = '';
+        const targets = [...enemyList.slice(0, 5)]; // Max 5 indicators
+        if(bossObj) targets.unshift(bossObj);
+        const w = window.innerWidth, h = window.innerHeight;
+        const margin = 30;
+
+        targets.forEach(e => {
+          const pos = e.position.clone().project(cam);
+          const sx = (pos.x * 0.5 + 0.5) * w;
+          const sy = (-pos.y * 0.5 + 0.5) * h;
+
+          // Skip if on screen and in front of camera
+          if(pos.z < 1 && sx > margin && sx < w-margin && sy > margin && sy < h-margin) return;
+
+          // Calculate edge position
+          const cx = w/2, cy = h/2;
+          const angle = Math.atan2(sy - cy, sx - cx);
+          const edgeX = Math.max(margin, Math.min(w-margin, cx + Math.cos(angle) * (w/2 - margin)));
+          const edgeY = Math.max(margin, Math.min(h-margin, cy + Math.sin(angle) * (h/2 - margin)));
+
+          const arrow = document.createElement('div');
+          arrow.className = 'enemy-indicator' + (e === bossObj ? ' boss' : '');
+          arrow.style.left = edgeX + 'px';
+          arrow.style.top = edgeY + 'px';
+          arrow.style.transform = `rotate(${angle + Math.PI/2}rad)`;
+          container.appendChild(arrow);
+        });
+      }
+
+      // Floating damage numbers
+      function showDamageNumber(position, damage, cam, isCrit) {
+        const pos = position.clone().project(cam);
+        if(pos.z > 1) return; // behind camera
+        const sx = (pos.x * 0.5 + 0.5) * window.innerWidth;
+        const sy = (-pos.y * 0.5 + 0.5) * window.innerHeight;
+        const el = document.createElement('div');
+        el.className = 'dmg-number';
+        el.textContent = Math.floor(damage);
+        el.style.left = (sx + (Math.random()-0.5)*20) + 'px';
+        el.style.top = sy + 'px';
+        el.style.fontSize = isCrit ? '22px' : '16px';
+        el.style.color = isCrit ? '#ffaa00' : '#ffffff';
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 800);
+      }
+
+      // Hit marker
+      function showHitMarker() {
+        const el = document.getElementById('hitMarker');
+        if(!el) return;
+        el.classList.add('active');
+        setTimeout(() => el.classList.remove('active'), 100);
+      }
+
+      // Combo flash
+      function showComboFlash(comboVal) {
+        if(comboVal < 3) return;
+        const el = document.getElementById('comboFlash');
+        if(!el) return;
+        el.textContent = comboVal + 'x COMBO';
+        if(comboVal >= 50) { el.style.color = '#ff0055'; el.textContent = comboVal + 'x LEGENDARY'; }
+        else if(comboVal >= 25) { el.style.color = '#ff8800'; el.textContent = comboVal + 'x UNSTOPPABLE'; }
+        else if(comboVal >= 10) { el.style.color = '#ffaa00'; el.textContent = comboVal + 'x RAMPAGE'; }
+        el.classList.remove('active');
+        void el.offsetWidth; // Force reflow
+        el.classList.add('active');
+      }
 
       try {
 
@@ -1389,7 +1566,8 @@
       function spawnEnemy() {
         const types = ['basic','fighter','interceptor','bomber'];
         const type = types[Math.floor(Math.random()*Math.min(types.length,2+Math.floor(level/2)))];
-        const d=100+Math.random()*60, t=Math.random()*Math.PI*2, p=Math.random()*Math.PI*0.5+Math.PI*0.25;
+        const spawnDist = isMobile ? 60+Math.random()*40 : 100+Math.random()*60;
+        const d=spawnDist, t=Math.random()*Math.PI*2, p=Math.random()*Math.PI*0.5+Math.PI*0.25;
         const pos = new THREE.Vector3(player.position.x+d*Math.sin(p)*Math.cos(t), player.position.y+d*Math.cos(p)*0.4, player.position.z+d*Math.sin(p)*Math.sin(t));
         enemies.push(createEnemy(type, pos));
       }
@@ -1629,8 +1807,14 @@
         }
         player.rotation.x = Math.max(-Math.PI/2+0.1, Math.min(Math.PI/2-0.1, player.rotation.x));
 
+        // Aim assist - gently pull toward nearest enemy on mobile
+        const fwdPreAim = new THREE.Vector3(0,0,-1).applyEuler(player.rotation);
+        const aimTarget = aimAssist(player, fwdPreAim, enemies, boss, currentAce, delta);
+
         if(keys['q']||keys['Q']) player.rollAngle += 0.04*delta;
         if(keys['e']||keys['E']) player.rollAngle -= 0.04*delta;
+        // Ship banking on mobile - tilt when turning
+        if(isMobile && joystickDX !== 0) player.rollAngle += joystickDX * 0.02 * delta;
         player.rollAngle *= 0.93;
 
         player.quaternion.setFromEuler(player.rotation);
@@ -1727,6 +1911,13 @@
           if(railgunCharge < 5) railgunCharge = 0;
         }
 
+        // Auto-fire on mobile when enemy is in crosshair
+        if(isMobile && !shooting) {
+          const shouldAutoFire = checkAutoFire(fwd, enemies, boss, currentAce, player.position);
+          if(shouldAutoFire) { shooting = true; document.getElementById('autoFireIndicator').style.opacity = '1'; }
+          else document.getElementById('autoFireIndicator').style.opacity = '0';
+        }
+
         // Regular shooting
         if(shooting && !weapons[currentWeapon].needsCharge && player.energy >= weapons[currentWeapon].energyCost) {
           const w = weapons[currentWeapon];
@@ -1800,6 +1991,9 @@
                 playHit();
                 stats.totalHits++;
                 hitSparks.push(createHitSpark(b.position.clone(), b.color));
+                showHitMarker();
+                showDamageNumber(b.position.clone(), b.damage, camera, false);
+                haptic(8);
                 if(!b.pierce || b.pierced.includes(j)) { scene.remove(b.mesh); bullets.splice(i,1); }
                 else b.pierced.push(j);
                 if(enemies[j].health <= 0) {
@@ -1812,6 +2006,7 @@
                   if(combo > stats.highestCombo) stats.highestCombo = combo;
                   checkComboMilestone();
                   checkKillStreak();
+                  showComboFlash(combo);
                   missionProgress++;
                   explosions.push(createExplosion(enemies[j].position, 0xff0055, enemies[j].size/2));
                   shockwaves.push(createShockwave(enemies[j].position, 0xff0055, enemies[j].size*3));
@@ -1833,6 +2028,9 @@
               playHit();
               stats.totalHits++;
               hitSparks.push(createHitSpark(b.position.clone(), b.color));
+              showHitMarker();
+              showDamageNumber(b.position.clone(), b.damage, camera, true);
+              haptic(8);
               scene.remove(b.mesh); bullets.splice(i,1);
               document.getElementById('bossHealthBar').style.width = (boss.health/boss.maxHealth*100)+'%';
               if(boss.health/boss.maxHealth < 0.66 && bossPhase === 1) { bossPhase = 2; document.getElementById('bossPhase').textContent = 'PHASE 2'; speak('BOSS PHASE 2'); }
@@ -1884,8 +2082,9 @@
 
         // Spawn enemies - more aggressive waves
         if(gameMode !== 'bossRush' && !boss && !currentAce && !hyperspaceActive) {
-          const maxEnemies = isMobile ? Math.min(6+level, 10) : 12+level*3;
-          if(Math.random() < (0.005+level*0.0015)*delta && enemies.length < maxEnemies) spawnEnemy();
+          const maxEnemies = isMobile ? Math.min(8+level, 12) : 12+level*3;
+          const spawnRate = isMobile ? (0.008+level*0.002) : (0.005+level*0.0015);
+          if(Math.random() < spawnRate*delta && enemies.length < maxEnemies) spawnEnemy();
 
           // Wave spawning - groups every 30 seconds
           if(Math.floor(stats.timePlayed) % 30 === 0 && Math.floor(stats.timePlayed) > 0 && Math.random() < 0.01) {
@@ -2147,11 +2346,15 @@
           radioMessage(line[0], line[1]);
         }
 
+        // Reset auto-fire (will re-enable next frame if still aimed)
+        if(isMobile && autoFireTarget) { shooting = false; }
+
         // Throttle DOM updates on mobile (every 3rd frame)
         uiFrame++;
         if(!isMobile || uiFrame % 3 === 0) {
           updateUI();
-          if(!isMobile) { renderWingmen(); updateRadar(); }
+          if(isMobile) { updateEnemyIndicators(camera, enemies, boss); }
+          else { renderWingmen(); updateRadar(); }
         }
       }
 
