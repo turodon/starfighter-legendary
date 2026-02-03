@@ -280,6 +280,36 @@
     .tutorial-box p { color: #ccc; margin: 10px 0; font-size: 14px; }
     .tutorial-box .keys { color: #ffaa00; font-size: 16px; margin: 15px 0; }
 
+    /* Landscape Orientation Prompt */
+    #landscapePrompt {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.97); z-index: 9999;
+      flex-direction: column; align-items: center; justify-content: center;
+    }
+    #landscapePrompt .rotate-icon {
+      width: 60px; height: 100px; border: 3px solid #00ff88; border-radius: 12px;
+      animation: rotatePhone 2s ease-in-out infinite; margin-bottom: 20px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #landscapePrompt .rotate-icon::after { content: ''; width: 20px; height: 3px; background: #00ff88; border-radius: 2px; }
+    @keyframes rotatePhone { 0%,40% { transform: rotate(0deg); } 60%,100% { transform: rotate(90deg); } }
+    #landscapePrompt p { color: #00ff88; font-size: 16px; text-align: center; }
+    #landscapePrompt .sub { color: #666; font-size: 12px; margin-top: 8px; }
+
+    /* Kill Flash */
+    #killFlash {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,255,136,0.15); pointer-events: none; z-index: 11;
+      opacity: 0; transition: opacity 0.05s;
+    }
+
+    /* Speed Lines Canvas */
+    #speedLinesCanvas {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 9; opacity: 0;
+      transition: opacity 0.3s;
+    }
+
     /* Mobile Touch Controls */
     #mobileControls { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 150; pointer-events: none; }
     #mobileControls.active { display: block; }
@@ -289,15 +319,22 @@
       width: 130px; height: 130px; pointer-events: auto; touch-action: none;
     }
     .joystick-base {
-      width: 130px; height: 130px; background: rgba(0,255,136,0.1);
-      border: 2px solid rgba(0,255,136,0.3); border-radius: 50%;
+      width: 130px; height: 130px;
+      background: radial-gradient(circle, rgba(0,255,136,0.08) 0%, rgba(0,255,136,0.02) 60%, transparent 70%);
+      border: 2px solid rgba(0,255,136,0.25); border-radius: 50%;
       position: relative;
+      box-shadow: inset 0 0 30px rgba(0,255,136,0.05);
+    }
+    .joystick-base::after {
+      content: '+'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      color: rgba(0,255,136,0.15); font-size: 40px; font-weight: 100; pointer-events: none;
     }
     .joystick-thumb {
-      width: 45px; height: 45px; background: rgba(0,255,136,0.4);
-      border: 2px solid rgba(0,255,136,0.7); border-radius: 50%;
+      width: 48px; height: 48px;
+      background: radial-gradient(circle, rgba(0,255,136,0.5) 0%, rgba(0,255,136,0.2) 100%);
+      border: 2px solid rgba(0,255,136,0.8); border-radius: 50%;
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      transition: none;
+      transition: none; box-shadow: 0 0 15px rgba(0,255,136,0.3);
     }
 
     .touch-btn {
@@ -305,40 +342,57 @@
       border-radius: 50%; display: flex; align-items: center; justify-content: center;
       font-family: 'Courier New', monospace; font-weight: bold; user-select: none;
       -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+      transition: transform 0.08s, box-shadow 0.08s;
     }
-    .touch-btn:active { transform: scale(0.9); }
+    .touch-btn:active { transform: scale(0.92); }
+
+    @keyframes btnPulse { 0%,100% { box-shadow: 0 0 8px currentColor; } 50% { box-shadow: 0 0 25px currentColor; } }
 
     #fireBtn {
-      bottom: 20px; right: 30px; width: 80px; height: 80px;
-      background: rgba(255,0,85,0.3); border: 3px solid rgba(255,0,85,0.7);
-      color: #ff0055; font-size: 12px;
+      bottom: 20px; right: 30px; width: 85px; height: 85px;
+      background: radial-gradient(circle, rgba(255,0,85,0.4) 0%, rgba(255,0,85,0.15) 70%);
+      border: 3px solid rgba(255,0,85,0.8); color: #ff0055; font-size: 13px;
+      box-shadow: 0 0 15px rgba(255,0,85,0.2), inset 0 0 15px rgba(255,0,85,0.1);
     }
-    #fireBtn.active { background: rgba(255,0,85,0.6); box-shadow: 0 0 20px rgba(255,0,85,0.5); }
+    #fireBtn.active {
+      background: radial-gradient(circle, rgba(255,0,85,0.7) 0%, rgba(255,0,85,0.3) 70%);
+      box-shadow: 0 0 30px rgba(255,0,85,0.6), inset 0 0 20px rgba(255,0,85,0.3);
+      animation: btnPulse 0.15s;
+    }
 
     #boostBtn {
-      bottom: 115px; right: 35px; width: 55px; height: 55px;
-      background: rgba(255,170,0,0.2); border: 2px solid rgba(255,170,0,0.5);
-      color: #ffaa00; font-size: 10px;
+      bottom: 120px; right: 35px; width: 58px; height: 58px;
+      background: radial-gradient(circle, rgba(255,170,0,0.3) 0%, rgba(255,170,0,0.1) 70%);
+      border: 2px solid rgba(255,170,0,0.6); color: #ffaa00; font-size: 10px;
+      box-shadow: 0 0 10px rgba(255,170,0,0.15);
     }
-    #boostBtn.active { background: rgba(255,170,0,0.5); box-shadow: 0 0 15px rgba(255,170,0,0.5); }
+    #boostBtn.active {
+      background: radial-gradient(circle, rgba(255,170,0,0.6) 0%, rgba(255,170,0,0.2) 70%);
+      box-shadow: 0 0 25px rgba(255,170,0,0.5);
+    }
 
     #thrustBtn {
-      bottom: 170px; left: 35px; width: 55px; height: 55px;
-      background: rgba(0,255,136,0.2); border: 2px solid rgba(0,255,136,0.5);
-      color: #00ff88; font-size: 10px;
+      bottom: 170px; left: 35px; width: 58px; height: 58px;
+      background: radial-gradient(circle, rgba(0,255,136,0.25) 0%, rgba(0,255,136,0.08) 70%);
+      border: 2px solid rgba(0,255,136,0.6); color: #00ff88; font-size: 10px;
+      box-shadow: 0 0 10px rgba(0,255,136,0.15);
     }
-    #thrustBtn.active { background: rgba(0,255,136,0.5); }
+    #thrustBtn.active {
+      background: radial-gradient(circle, rgba(0,255,136,0.5) 0%, rgba(0,255,136,0.2) 70%);
+      box-shadow: 0 0 25px rgba(0,255,136,0.5);
+    }
 
     #lockBtn {
-      bottom: 185px; right: 38px; width: 48px; height: 48px;
-      background: rgba(0,170,255,0.2); border: 2px solid rgba(0,170,255,0.5);
-      color: #00aaff; font-size: 9px;
+      bottom: 195px; right: 38px; width: 50px; height: 50px;
+      background: radial-gradient(circle, rgba(0,170,255,0.25) 0%, rgba(0,170,255,0.08) 70%);
+      border: 2px solid rgba(0,170,255,0.6); color: #00aaff; font-size: 9px;
+      box-shadow: 0 0 10px rgba(0,170,255,0.15);
     }
 
     #pauseBtn {
-      top: 10px; right: 10px; width: 40px; height: 40px;
-      background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3);
-      color: #fff; font-size: 14px; border-radius: 8px;
+      top: 10px; right: 10px; width: 42px; height: 42px;
+      background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.25);
+      color: #fff; font-size: 14px; border-radius: 10px;
     }
 
     .touch-weapon-bar {
@@ -389,6 +443,17 @@
   </style>
 </head>
 <body>
+  <!-- Landscape Prompt -->
+  <div id="landscapePrompt">
+    <div class="rotate-icon"></div>
+    <p>ROTATE YOUR DEVICE</p>
+    <p class="sub">Landscape mode required</p>
+  </div>
+
+  <!-- Kill Flash & Speed Lines -->
+  <div id="killFlash"></div>
+  <canvas id="speedLinesCanvas"></canvas>
+
   <!-- Overlays -->
   <div id="damageOverlay" class="overlay"></div>
   <div id="shieldOverlay" class="overlay"></div>
@@ -702,13 +767,84 @@
         return false;
       };
 
+      // ═══════════════════════════════════════════════════════════════
+      // MOBILE S-TIER SYSTEMS
+      // ═══════════════════════════════════════════════════════════════
+
+      // Haptic feedback
+      function haptic(ms) { if(isMobile && navigator.vibrate) navigator.vibrate(ms); }
+
+      // Kill flash
+      function killFlash() {
+        const el = document.getElementById('killFlash');
+        if(!el) return;
+        el.style.opacity = '1';
+        setTimeout(() => el.style.opacity = '0', 80);
+      }
+
+      // Screen shake system
+      let shakeIntensity = 0, shakeDecay = 0.9;
+      function triggerShake(intensity) { shakeIntensity = Math.max(shakeIntensity, intensity); }
+
+      // Speed lines
+      const speedCanvas = document.getElementById('speedLinesCanvas');
+      const speedCtx = speedCanvas ? speedCanvas.getContext('2d') : null;
+      function resizeSpeedCanvas() {
+        if(speedCanvas) { speedCanvas.width = window.innerWidth; speedCanvas.height = window.innerHeight; }
+      }
+      resizeSpeedCanvas();
+      function drawSpeedLines(intensity) {
+        if(!speedCtx) return;
+        speedCtx.clearRect(0,0,speedCanvas.width,speedCanvas.height);
+        const cx = speedCanvas.width/2, cy = speedCanvas.height/2;
+        const count = Math.floor(intensity * 30);
+        speedCtx.strokeStyle = 'rgba(100,180,255,0.25)';
+        speedCtx.lineWidth = 1.5;
+        for(let i=0;i<count;i++) {
+          const angle = Math.random()*Math.PI*2;
+          const r1 = 60+Math.random()*40;
+          const r2 = r1+50+intensity*100;
+          speedCtx.beginPath();
+          speedCtx.moveTo(cx+Math.cos(angle)*r1, cy+Math.sin(angle)*r1);
+          speedCtx.lineTo(cx+Math.cos(angle)*r2, cy+Math.sin(angle)*r2);
+          speedCtx.stroke();
+        }
+      }
+
+      // Fullscreen
+      function requestFullscreen() {
+        const el = document.documentElement;
+        if(el.requestFullscreen) el.requestFullscreen().catch(()=>{});
+        else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      }
+
+      // Landscape detection
+      function checkOrientation() {
+        if(!isMobile) return;
+        const prompt = document.getElementById('landscapePrompt');
+        if(window.innerHeight > window.innerWidth * 1.2) {
+          prompt.style.display = 'flex';
+        } else {
+          prompt.style.display = 'none';
+        }
+      }
+      if(isMobile) {
+        checkOrientation();
+        window.addEventListener('resize', checkOrientation);
+        window.addEventListener('orientationchange', () => setTimeout(checkOrientation, 100));
+      }
+
+      // UI frame throttle
+      let uiFrame = 0;
+
       try {
 
       // ═══════════════════════════════════════════════════════════════
       // THREE.JS SETUP
       // ═══════════════════════════════════════════════════════════════
       const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, isMobile ? 2000 : 5000);
+      const baseFOV = isMobile ? 80 : 75; // Wider FOV on mobile feels faster
+      const camera = new THREE.PerspectiveCamera(baseFOV, window.innerWidth/window.innerHeight, 0.1, isMobile ? 2000 : 5000);
       const renderer = new THREE.WebGLRenderer({ antialias: !isMobile });
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 2));
@@ -1480,7 +1616,7 @@
 
         // Player rotation
         if(isMobile) {
-          const mobileSens = settings.sensitivity * 0.003;
+          const mobileSens = settings.sensitivity * 0.006;
           player.rotation.y -= joystickDX * mobileSens * delta;
           player.rotation.x -= joystickDY * mobileSens * delta;
           // Auto-forward on mobile - always move unless braking
@@ -1531,10 +1667,43 @@
           camera.quaternion.copy(player.quaternion);
           document.getElementById('cockpitHUD').style.display = 'block';
         } else {
-          const camTarget = player.position.clone().add(fwd.clone().multiplyScalar(-10)).add(new THREE.Vector3(0,2.5,0));
-          camera.position.lerp(camTarget, 0.08);
-          camera.lookAt(player.position.clone().add(fwd.clone().multiplyScalar(15)));
+          // Cinematic chase camera with dynamic offset
+          const camDist = isMobile ? 12 : 10;
+          const camHeight = isMobile ? 3.5 : 2.5;
+          const lookAhead = isMobile ? 20 : 15;
+          const lerpSpeed = isMobile ? 0.06 : 0.08;
+          // Slight lateral offset when turning for dynamic feel
+          const lateralOffset = isMobile ? -joystickDX * 2 : 0;
+          const camTarget = player.position.clone()
+            .add(fwd.clone().multiplyScalar(-camDist))
+            .add(new THREE.Vector3(0, camHeight, 0))
+            .add(right.clone().multiplyScalar(lateralOffset));
+          camera.position.lerp(camTarget, lerpSpeed);
+          camera.lookAt(player.position.clone().add(fwd.clone().multiplyScalar(lookAhead)));
           document.getElementById('cockpitHUD').style.display = 'none';
+        }
+
+        // Dynamic FOV during boost
+        const targetFOV = boosting ? baseFOV + 15 : baseFOV;
+        camera.fov += (targetFOV - camera.fov) * 0.05;
+        camera.updateProjectionMatrix();
+
+        // Screen shake
+        if(shakeIntensity > 0.1) {
+          camera.position.x += (Math.random()-0.5)*shakeIntensity;
+          camera.position.y += (Math.random()-0.5)*shakeIntensity;
+          shakeIntensity *= shakeDecay;
+        } else shakeIntensity = 0;
+
+        // Speed lines during boost
+        if(boosting && speedCanvas) {
+          speedCanvas.style.opacity = '0.7';
+          drawSpeedLines(player.speed / player.boostSpeed);
+        } else if(player.speed > player.maxSpeed * 0.8 && speedCanvas) {
+          speedCanvas.style.opacity = '0.3';
+          drawSpeedLines(0.3);
+        } else if(speedCanvas) {
+          speedCanvas.style.opacity = '0';
         }
 
         document.getElementById('boostOverlay').style.opacity = boosting ? 0.3 : (player.speed > 1.5 ? 0.1 : 0);
@@ -1647,6 +1816,9 @@
                   explosions.push(createExplosion(enemies[j].position, 0xff0055, enemies[j].size/2));
                   shockwaves.push(createShockwave(enemies[j].position, 0xff0055, enemies[j].size*3));
                   playExplosion();
+                  killFlash();
+                  haptic(15);
+                  triggerShake(0.5);
                   if(Math.random() < 0.15) powerups.push(createPowerup(enemies[j].position, ['credits','credits','health','shield','energy'][Math.floor(Math.random()*5)]));
                   if(lockedTarget === enemies[j]) lockedTarget = null;
                   scene.remove(enemies[j].mesh);
@@ -1674,6 +1846,9 @@
                 missionProgress++;
                 for(let k=0;k<6;k++) setTimeout(() => { if(boss) explosions.push(createExplosion(boss.position.clone().add(new THREE.Vector3((Math.random()-0.5)*15,(Math.random()-0.5)*15,(Math.random()-0.5)*15)), 0xff00ff, 4)); }, k*150);
                 playExplosion(true);
+                haptic([50,30,50,30,100]); // big rumble
+                triggerShake(3);
+                killFlash();
                 speak('BOSS DESTROYED');
                 scene.remove(boss.mesh);
                 boss = null;
@@ -1972,9 +2147,12 @@
           radioMessage(line[0], line[1]);
         }
 
-        updateUI();
-        renderWingmen();
-        updateRadar();
+        // Throttle DOM updates on mobile (every 3rd frame)
+        uiFrame++;
+        if(!isMobile || uiFrame % 3 === 0) {
+          updateUI();
+          if(!isMobile) { renderWingmen(); updateRadar(); }
+        }
       }
 
       function takeDamage(amount) {
@@ -1987,6 +2165,8 @@
         }
         player.health -= amount;
         playHit();
+        haptic([30,20,40]); // impact vibration pattern
+        triggerShake(amount > 15 ? 1.5 : 0.8);
         document.getElementById('damageOverlay').style.opacity = 0.5;
         setTimeout(() => document.getElementById('damageOverlay').style.opacity = 0, 200);
         if(player.health <= player.maxHealth*0.3 && player.health > 0) speak('WARNING - HULL CRITICAL');
@@ -2005,6 +2185,8 @@
         if(isMobile) {
           isPointerLocked = true; // Simulate for mobile
           document.getElementById('mobileControls').classList.add('active');
+          requestFullscreen();
+          haptic(30);
         } else {
           renderer.domElement.requestPointerLock();
         }
@@ -2460,7 +2642,7 @@
       document.getElementById('musicToggle').onclick = e => { settings.music = !settings.music; e.target.classList.toggle('on', settings.music); if(!settings.music) stopMusic(); };
       document.getElementById('shipColor').oninput = e => { shipColor = parseInt(e.target.value.slice(1), 16); };
 
-      window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+      window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); resizeSpeedCanvas(); });
 
       // ═══════════════════════════════════════════════════════════════
       // MOBILE TOUCH CONTROLS
@@ -2524,38 +2706,45 @@
           }
         });
 
+        const DEAD_ZONE = 8; // pixels - ignore tiny movements
         function updateJoystick(touch) {
           const rect = joystickBase.getBoundingClientRect();
           let dx = touch.clientX - (rect.left + rect.width/2);
           let dy = touch.clientY - (rect.top + rect.height/2);
           const dist = Math.sqrt(dx*dx + dy*dy);
+          // Dead zone - ignore micro-movements
+          if(dist < DEAD_ZONE) { joystickDX = 0; joystickDY = 0; return; }
           if(dist > joystickMax) { dx = dx/dist*joystickMax; dy = dy/dist*joystickMax; }
           joystickThumb.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-          joystickDX = dx / joystickMax; // -1 to 1
-          joystickDY = dy / joystickMax; // -1 to 1
+          // Non-linear response curve - more precision at center, faster at edges
+          const normalized = (dist - DEAD_ZONE) / (joystickMax - DEAD_ZONE);
+          const curved = Math.pow(Math.min(normalized, 1), 1.5); // Exponential curve
+          const angle = Math.atan2(dy, dx);
+          joystickDX = Math.cos(angle) * curved;
+          joystickDY = Math.sin(angle) * curved;
         }
 
-        // Fire button
+        // Fire button - with haptic
         const fireBtn = document.getElementById('fireBtn');
-        fireBtn.addEventListener('touchstart', e => { e.preventDefault(); shooting = true; fireBtn.classList.add('active'); }, {passive:false});
+        fireBtn.addEventListener('touchstart', e => { e.preventDefault(); shooting = true; fireBtn.classList.add('active'); haptic(10); }, {passive:false});
         fireBtn.addEventListener('touchend', e => { e.preventDefault(); shooting = false; fireBtn.classList.remove('active'); }, {passive:false});
         fireBtn.addEventListener('touchcancel', e => { shooting = false; fireBtn.classList.remove('active'); });
 
-        // Brake button (hold to stop)
+        // Brake button - with haptic
         const thrustBtn = document.getElementById('thrustBtn');
-        thrustBtn.addEventListener('touchstart', e => { e.preventDefault(); keys[' '] = true; keys['w'] = false; thrustBtn.classList.add('active'); }, {passive:false});
+        thrustBtn.addEventListener('touchstart', e => { e.preventDefault(); keys[' '] = true; keys['w'] = false; thrustBtn.classList.add('active'); haptic(15); }, {passive:false});
         thrustBtn.addEventListener('touchend', e => { e.preventDefault(); keys[' '] = false; thrustBtn.classList.remove('active'); }, {passive:false});
         thrustBtn.addEventListener('touchcancel', e => { keys[' '] = false; thrustBtn.classList.remove('active'); });
 
-        // Boost button
+        // Boost button - with haptic
         const boostBtn = document.getElementById('boostBtn');
-        boostBtn.addEventListener('touchstart', e => { e.preventDefault(); keys['Shift'] = true; boostBtn.classList.add('active'); }, {passive:false});
+        boostBtn.addEventListener('touchstart', e => { e.preventDefault(); keys['Shift'] = true; boostBtn.classList.add('active'); haptic(20); }, {passive:false});
         boostBtn.addEventListener('touchend', e => { e.preventDefault(); keys['Shift'] = false; boostBtn.classList.remove('active'); }, {passive:false});
         boostBtn.addEventListener('touchcancel', e => { keys['Shift'] = false; boostBtn.classList.remove('active'); });
 
-        // Lock button
+        // Lock button - with haptic
         const lockBtn = document.getElementById('lockBtn');
-        lockBtn.addEventListener('touchstart', e => { e.preventDefault(); keys['Tab'] = true; }, {passive:false});
+        lockBtn.addEventListener('touchstart', e => { e.preventDefault(); keys['Tab'] = true; haptic(10); }, {passive:false});
         lockBtn.addEventListener('touchend', e => { e.preventDefault(); keys['Tab'] = false; }, {passive:false});
         lockBtn.addEventListener('touchcancel', e => { keys['Tab'] = false; });
 
