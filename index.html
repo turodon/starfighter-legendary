@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>STARFIGHTER LEGENDARY</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -279,6 +279,108 @@
     .tutorial-box h3 { color: #00ff88; margin-bottom: 15px; }
     .tutorial-box p { color: #ccc; margin: 10px 0; font-size: 14px; }
     .tutorial-box .keys { color: #ffaa00; font-size: 16px; margin: 15px 0; }
+
+    /* Mobile Touch Controls */
+    #mobileControls { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 150; pointer-events: none; }
+    #mobileControls.active { display: block; }
+
+    .touch-joystick {
+      position: absolute; bottom: 30px; left: 30px;
+      width: 140px; height: 140px; pointer-events: auto; touch-action: none;
+    }
+    .joystick-base {
+      width: 140px; height: 140px; background: rgba(0,255,136,0.1);
+      border: 2px solid rgba(0,255,136,0.3); border-radius: 50%;
+      position: relative;
+    }
+    .joystick-thumb {
+      width: 50px; height: 50px; background: rgba(0,255,136,0.4);
+      border: 2px solid rgba(0,255,136,0.7); border-radius: 50%;
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      transition: none;
+    }
+
+    .touch-btn {
+      position: absolute; pointer-events: auto; touch-action: none;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-family: 'Courier New', monospace; font-weight: bold; user-select: none;
+      -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+    }
+    .touch-btn:active { transform: scale(0.9); }
+
+    #fireBtn {
+      bottom: 40px; right: 40px; width: 90px; height: 90px;
+      background: rgba(255,0,85,0.3); border: 3px solid rgba(255,0,85,0.7);
+      color: #ff0055; font-size: 12px;
+    }
+    #fireBtn.active { background: rgba(255,0,85,0.6); box-shadow: 0 0 20px rgba(255,0,85,0.5); }
+
+    #boostBtn {
+      bottom: 150px; right: 50px; width: 60px; height: 60px;
+      background: rgba(255,170,0,0.2); border: 2px solid rgba(255,170,0,0.5);
+      color: #ffaa00; font-size: 10px;
+    }
+    #boostBtn.active { background: rgba(255,170,0,0.5); box-shadow: 0 0 15px rgba(255,170,0,0.5); }
+
+    #thrustBtn {
+      bottom: 150px; left: 40px; width: 60px; height: 60px;
+      background: rgba(0,255,136,0.2); border: 2px solid rgba(0,255,136,0.5);
+      color: #00ff88; font-size: 10px;
+    }
+    #thrustBtn.active { background: rgba(0,255,136,0.5); }
+
+    #lockBtn {
+      bottom: 230px; right: 55px; width: 50px; height: 50px;
+      background: rgba(0,170,255,0.2); border: 2px solid rgba(0,170,255,0.5);
+      color: #00aaff; font-size: 9px;
+    }
+
+    .touch-weapon-bar {
+      position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 5px; pointer-events: auto;
+    }
+    .touch-weapon-btn {
+      width: 38px; height: 38px; background: rgba(0,0,0,0.5); border: 2px solid #333;
+      border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      font-size: 10px; color: #555; font-family: 'Courier New', monospace;
+      pointer-events: auto; touch-action: none; -webkit-tap-highlight-color: transparent;
+    }
+    .touch-weapon-btn.active { border-color: #00ff88; color: #00ff88; box-shadow: 0 0 8px rgba(0,255,136,0.5); }
+    .touch-weapon-btn.locked { opacity: 0.3; pointer-events: none; }
+
+    /* Mobile HUD adjustments */
+    @media (max-width: 768px), (hover: none) and (pointer: coarse) {
+      .stats-panel { top: 8px; left: 8px; }
+      .stat-row { font-size: 10px; }
+      .bar-container { width: 100px; height: 8px; }
+      .score-panel { top: 8px; right: 8px; }
+      .score-big { font-size: 18px; }
+      .combo-display { font-size: 14px; }
+      .mission-panel { top: 5px; min-width: 180px; }
+      .mission-name { font-size: 11px; }
+      .mission-objective { font-size: 10px; }
+      .mission-bar { width: 140px; }
+      .weapon-panel { bottom: 55px; }
+      .weapon-name { font-size: 12px; }
+      .weapon-slots { display: none; }
+      .radar-panel { bottom: 70px; right: 10px; }
+      #radarCanvas { width: 100px; height: 100px; }
+      .speed-panel { display: none; }
+      .wingman-panel { display: none; }
+      .target-panel { top: 70px; right: 8px; }
+      #radioMessages { display: none; }
+      #controlsHint { display: none; }
+      #bossUI { width: 250px; top: 55px; }
+      .boss-name { font-size: 12px; }
+      #announcement { font-size: 24px; }
+      #voiceText { font-size: 14px; }
+      .screen h1 { font-size: 2rem; }
+      .screen h2 { font-size: 1.3rem; }
+      .menu-card { width: 130px; padding: 12px; }
+      .menu-card h3 { font-size: 0.85rem; }
+      .menu-card p { font-size: 0.65rem; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    }
   </style>
 </head>
 <body>
@@ -388,6 +490,20 @@
   <div id="voiceText"></div>
   <div id="viewIndicator">THIRD PERSON [V to toggle]</div>
   <div id="controlsHint">WASD=Fly | Mouse=Aim | Click=Fire | 1-5=Weapons | Shift=Boost | Tab=Lock | V=View | B=Shop</div>
+
+  <!-- Mobile Touch Controls -->
+  <div id="mobileControls">
+    <div class="touch-joystick" id="joystickArea">
+      <div class="joystick-base" id="joystickBase">
+        <div class="joystick-thumb" id="joystickThumb"></div>
+      </div>
+    </div>
+    <div class="touch-btn" id="fireBtn">FIRE</div>
+    <div class="touch-btn" id="boostBtn">BOOST</div>
+    <div class="touch-btn" id="thrustBtn">FWD</div>
+    <div class="touch-btn" id="lockBtn">LOCK</div>
+    <div class="touch-weapon-bar" id="touchWeaponBar"></div>
+  </div>
 
   <!-- Pilot Name Entry -->
   <div id="nameScreen" class="screen">
@@ -594,9 +710,10 @@
 
       // Stars
       const starsGeo = new THREE.BufferGeometry();
-      const starPos = new Float32Array(8000*3);
-      const starCol = new Float32Array(8000*3);
-      for(let i=0;i<8000;i++){
+      const starCount = isMobile ? 3000 : 8000;
+      const starPos = new Float32Array(starCount*3);
+      const starCol = new Float32Array(starCount*3);
+      for(let i=0;i<starCount;i++){
         const r=1800+Math.random()*600, t=Math.random()*Math.PI*2, p=Math.acos(2*Math.random()-1);
         starPos[i*3]=r*Math.sin(p)*Math.cos(t); starPos[i*3+1]=r*Math.sin(p)*Math.sin(t); starPos[i*3+2]=r*Math.cos(p);
         const c=Math.random(); starCol[i*3]=c<0.1?0.6:1; starCol[i*3+1]=c<0.1?0.8:(c<0.15?0.9:1); starCol[i*3+2]=1;
@@ -807,6 +924,11 @@
       // Input
       const keys = {};
       let mouseDeltaX = 0, mouseDeltaY = 0, isPointerLocked = false, shooting = false, lastShot = 0;
+
+      // Mobile detection
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && window.innerWidth < 1024);
+      let touchThrust = false, touchBoosting = false, touchLocking = false;
+      let joystickDX = 0, joystickDY = 0;
 
       // Settings
       let settings = {
@@ -1206,7 +1328,8 @@
       function triggerHyperspace() {
         hyperspaceActive = true;
         hyperspaceLines = [];
-        for(let i=0;i<200;i++){
+        const hyperCount = isMobile ? 80 : 200;
+        for(let i=0;i<hyperCount;i++){
           const geo = new THREE.BufferGeometry();
           const startPos = new THREE.Vector3((Math.random()-0.5)*100, (Math.random()-0.5)*100, -50-Math.random()*200);
           const endPos = startPos.clone().add(new THREE.Vector3(0,0,-50-Math.random()*100));
@@ -1299,11 +1422,17 @@
         if(comboTimer > 0) { comboTimer -= dt; if(comboTimer <= 0) combo = 1; }
 
         // Player rotation
-        const sens = settings.sensitivity * 0.0004;
-        player.rotation.y -= mouseDeltaX * sens;
-        player.rotation.x -= mouseDeltaY * sens;
+        if(isMobile) {
+          const mobileSens = settings.sensitivity * 0.0015;
+          player.rotation.y -= joystickDX * mobileSens * delta;
+          player.rotation.x -= joystickDY * mobileSens * delta;
+        } else {
+          const sens = settings.sensitivity * 0.0004;
+          player.rotation.y -= mouseDeltaX * sens;
+          player.rotation.x -= mouseDeltaY * sens;
+          mouseDeltaX = 0; mouseDeltaY = 0;
+        }
         player.rotation.x = Math.max(-Math.PI/2+0.1, Math.min(Math.PI/2-0.1, player.rotation.x));
-        mouseDeltaX = 0; mouseDeltaY = 0;
 
         if(keys['q']||keys['Q']) player.rollAngle += 0.04*delta;
         if(keys['e']||keys['E']) player.rollAngle -= 0.04*delta;
@@ -1811,7 +1940,12 @@
         hideAllScreens();
         resetGame();
         gameRunning = true;
-        renderer.domElement.requestPointerLock();
+        if(isMobile) {
+          isPointerLocked = true; // Simulate for mobile
+          document.getElementById('mobileControls').classList.add('active');
+        } else {
+          renderer.domElement.requestPointerLock();
+        }
         startMusic();
         speak('LAUNCHING');
         if(mode === 'bossRush') { setTimeout(spawnBoss, 2000); }
@@ -1861,7 +1995,8 @@
       function endGame() {
         gameRunning = false;
         stopMusic();
-        document.exitPointerLock();
+        if(isMobile) document.getElementById('mobileControls').classList.remove('active');
+        else document.exitPointerLock();
         stats.totalDeaths++;
         const xp = Math.floor(score/10);
         pilotXP += xp;
@@ -1878,7 +2013,8 @@
       function showVictoryScreen() {
         gameRunning = false;
         stopMusic();
-        document.exitPointerLock();
+        if(isMobile) document.getElementById('mobileControls').classList.remove('active');
+        else document.exitPointerLock();
         const xp = Math.floor(score/5);
         pilotXP += xp;
         document.getElementById('victoryScore').textContent = score.toLocaleString();
@@ -1894,8 +2030,15 @@
       function togglePause() {
         if(!gameRunning) return;
         gamePaused = !gamePaused;
-        if(gamePaused) { document.exitPointerLock(); stopMusic(); document.getElementById('pauseScreen').classList.remove('hidden'); }
-        else { renderer.domElement.requestPointerLock(); startMusic(); document.getElementById('pauseScreen').classList.add('hidden'); }
+        if(gamePaused) {
+          if(!isMobile) document.exitPointerLock();
+          if(isMobile) document.getElementById('mobileControls').classList.remove('active');
+          stopMusic(); document.getElementById('pauseScreen').classList.remove('hidden');
+        } else {
+          if(!isMobile) renderer.domElement.requestPointerLock();
+          if(isMobile) document.getElementById('mobileControls').classList.add('active');
+          startMusic(); document.getElementById('pauseScreen').classList.add('hidden');
+        }
       }
 
       function hideAllScreens() {
@@ -2256,6 +2399,108 @@
       document.getElementById('shipColor').oninput = e => { shipColor = parseInt(e.target.value.slice(1), 16); };
 
       window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+
+      // ═══════════════════════════════════════════════════════════════
+      // MOBILE TOUCH CONTROLS
+      // ═══════════════════════════════════════════════════════════════
+      if(isMobile) {
+        // Show touch controls and adjust renderer
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+
+        // Build touch weapon bar
+        const weaponBar = document.getElementById('touchWeaponBar');
+        weapons.forEach((w, i) => {
+          const btn = document.createElement('div');
+          btn.className = 'touch-weapon-btn' + (i === 0 ? ' active' : '') + (w.unlocked ? '' : ' locked');
+          btn.textContent = (i+1);
+          btn.dataset.idx = i;
+          btn.addEventListener('touchstart', e => {
+            e.preventDefault();
+            if(weapons[i].unlocked) {
+              currentWeapon = i;
+              railgunCharge = 0;
+              document.querySelectorAll('.touch-weapon-btn').forEach((b,j) => b.classList.toggle('active', j === i));
+            }
+          }, {passive:false});
+          weaponBar.appendChild(btn);
+        });
+
+        // Joystick
+        const joystickBase = document.getElementById('joystickBase');
+        const joystickThumb = document.getElementById('joystickThumb');
+        let joystickActive = false, joystickId = null;
+        const joystickCenter = { x: 70, y: 70 };
+        const joystickMax = 55;
+
+        document.getElementById('joystickArea').addEventListener('touchstart', e => {
+          e.preventDefault();
+          const t = e.changedTouches[0];
+          joystickActive = true;
+          joystickId = t.identifier;
+          updateJoystick(t);
+        }, {passive:false});
+
+        document.addEventListener('touchmove', e => {
+          if(!joystickActive) return;
+          for(let i=0; i<e.changedTouches.length; i++) {
+            if(e.changedTouches[i].identifier === joystickId) {
+              updateJoystick(e.changedTouches[i]);
+              break;
+            }
+          }
+        }, {passive:false});
+
+        document.addEventListener('touchend', e => {
+          for(let i=0; i<e.changedTouches.length; i++) {
+            if(e.changedTouches[i].identifier === joystickId) {
+              joystickActive = false;
+              joystickId = null;
+              joystickThumb.style.transform = 'translate(-50%, -50%)';
+              joystickDX = 0; joystickDY = 0;
+              break;
+            }
+          }
+        });
+
+        function updateJoystick(touch) {
+          const rect = joystickBase.getBoundingClientRect();
+          let dx = touch.clientX - (rect.left + rect.width/2);
+          let dy = touch.clientY - (rect.top + rect.height/2);
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if(dist > joystickMax) { dx = dx/dist*joystickMax; dy = dy/dist*joystickMax; }
+          joystickThumb.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+          joystickDX = dx / joystickMax; // -1 to 1
+          joystickDY = dy / joystickMax; // -1 to 1
+        }
+
+        // Fire button
+        const fireBtn = document.getElementById('fireBtn');
+        fireBtn.addEventListener('touchstart', e => { e.preventDefault(); shooting = true; fireBtn.classList.add('active'); }, {passive:false});
+        fireBtn.addEventListener('touchend', e => { e.preventDefault(); shooting = false; fireBtn.classList.remove('active'); }, {passive:false});
+        fireBtn.addEventListener('touchcancel', e => { shooting = false; fireBtn.classList.remove('active'); });
+
+        // Thrust button (auto-forward)
+        const thrustBtn = document.getElementById('thrustBtn');
+        thrustBtn.addEventListener('touchstart', e => { e.preventDefault(); touchThrust = true; keys['w'] = true; thrustBtn.classList.add('active'); }, {passive:false});
+        thrustBtn.addEventListener('touchend', e => { e.preventDefault(); touchThrust = false; keys['w'] = false; thrustBtn.classList.remove('active'); }, {passive:false});
+        thrustBtn.addEventListener('touchcancel', e => { touchThrust = false; keys['w'] = false; thrustBtn.classList.remove('active'); });
+
+        // Boost button
+        const boostBtn = document.getElementById('boostBtn');
+        boostBtn.addEventListener('touchstart', e => { e.preventDefault(); touchBoosting = true; keys['Shift'] = true; keys['w'] = true; boostBtn.classList.add('active'); }, {passive:false});
+        boostBtn.addEventListener('touchend', e => { e.preventDefault(); touchBoosting = false; keys['Shift'] = false; if(!touchThrust) keys['w'] = false; boostBtn.classList.remove('active'); }, {passive:false});
+        boostBtn.addEventListener('touchcancel', e => { touchBoosting = false; keys['Shift'] = false; if(!touchThrust) keys['w'] = false; boostBtn.classList.remove('active'); });
+
+        // Lock button
+        const lockBtn = document.getElementById('lockBtn');
+        lockBtn.addEventListener('touchstart', e => { e.preventDefault(); keys['Tab'] = true; }, {passive:false});
+        lockBtn.addEventListener('touchend', e => { e.preventDefault(); keys['Tab'] = false; }, {passive:false});
+        lockBtn.addEventListener('touchcancel', e => { keys['Tab'] = false; });
+
+        // Prevent default touch behavior on game area
+        renderer.domElement.addEventListener('touchstart', e => e.preventDefault(), {passive:false});
+        renderer.domElement.addEventListener('touchmove', e => e.preventDefault(), {passive:false});
+      }
 
       // ═══════════════════════════════════════════════════════════════
       // GAME LOOP
