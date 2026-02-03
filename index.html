@@ -680,6 +680,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script>
     window.onload = function() {
+      // Mobile detection (must be before environment setup)
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && window.innerWidth < 1024);
+
       // ═══════════════════════════════════════════════════════════════
       // THREE.JS SETUP
       // ═══════════════════════════════════════════════════════════════
@@ -925,8 +928,7 @@
       const keys = {};
       let mouseDeltaX = 0, mouseDeltaY = 0, isPointerLocked = false, shooting = false, lastShot = 0;
 
-      // Mobile detection
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && window.innerWidth < 1024);
+      // Mobile touch state
       let touchThrust = false, touchBoosting = false, touchLocking = false;
       let joystickDX = 0, joystickDY = 0;
 
